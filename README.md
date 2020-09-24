@@ -199,6 +199,47 @@ AWS_ACCESS_KEY_ID=$(terraform output user1_access_key_id) AWS_SECRET_ACCESS_KEY=
 An error occurred (AccessDenied) when calling the GetObject operation: Access Denied
 ```
 
+## Scenario #5: An IAM role must allow the AssumeRole action as well as the identity policy
+
+User1 has access to an IAM role, but the role also must allow access from the account.
+
+```
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": [
+                "sts:AssumeRole"
+            ],
+            "Effect": "Allow",
+            "Resource": "<role>"
+        }
+    ]
+}
+```
+
+```
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::<accountid>:root"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+```
+
+The ```arn:aws:iam::<accountid>:root``` allows the whole account, so from here the identity policies define access.
+
+```
+AWS_ACCESS_KEY_ID=$(terraform output user1_access_key_id) AWS_SECRET_ACCESS_KEY=$(terraform output user1_secret_access_key) AWS_SESSION_TOKEN="" aws sts assume-role --role-arn $(terraform output role) --role-session-name ab
+```
+
 ## Cleanup
 
 * ```terraform destroy```
