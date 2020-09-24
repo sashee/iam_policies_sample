@@ -2,8 +2,8 @@ provider "aws" {
 }
 
 locals {
-	block_not_user2 = false
-	allow_user2 = false
+  block_not_user2 = false
+  allow_user2     = false
 }
 
 data "aws_caller_identity" "current" {}
@@ -13,73 +13,73 @@ resource "aws_s3_bucket" "bucket" {
 }
 
 resource "aws_s3_bucket_object" "object" {
-	key = "text.txt"
-	content = "Hello world!"
-  bucket = aws_s3_bucket.bucket.bucket
+  key     = "text.txt"
+  content = "Hello world!"
+  bucket  = aws_s3_bucket.bucket.bucket
 }
 
 resource "aws_s3_bucket_object" "tagged_object" {
-	key = "tagged.txt"
-	content = "Hello world!"
-  bucket = aws_s3_bucket.bucket.bucket
-	tags = {
-		access = "secret"
-	}
+  key     = "tagged.txt"
+  content = "Hello world!"
+  bucket  = aws_s3_bucket.bucket.bucket
+  tags = {
+    access = "secret"
+  }
 }
 
 resource "aws_s3_bucket_object" "tagged_object2" {
-	key = "tagged2.txt"
-	content = "Hello world!"
-  bucket = aws_s3_bucket.bucket.bucket
-	tags = {
-		access = "restricted"
-	}
+  key     = "tagged2.txt"
+  content = "Hello world!"
+  bucket  = aws_s3_bucket.bucket.bucket
+  tags = {
+    access = "restricted"
+  }
 }
 
 # this data source and the local variable contains the terraform user/role's principal
 data "aws_arn" "current" {
-	arn = data.aws_caller_identity.current.arn
+  arn = data.aws_caller_identity.current.arn
 }
 
 locals {
-	currentArn = length(regexall("^assumed-role", data.aws_arn.current.resource)) > 0 ? "arn:${data.aws_arn.current.partition}:iam::${data.aws_arn.current.account}:role/${regex("^[^/]*/([^/]*)/", data.aws_arn.current.resource)[0]}" : data.aws_caller_identity.current.arn
+  currentArn = length(regexall("^assumed-role", data.aws_arn.current.resource)) > 0 ? "arn:${data.aws_arn.current.partition}:iam::${data.aws_arn.current.account}:role/${regex("^[^/]*/([^/]*)/", data.aws_arn.current.resource)[0]}" : data.aws_caller_identity.current.arn
 }
 
 data "aws_iam_policy_document" "bucket_policy_document" {
-	dynamic "statement" {
-		for_each = local.block_not_user2 ? [1] : []
-		content {
-			effect = "Deny"
-			actions = ["s3:GetObject"]
-			resources = ["${aws_s3_bucket.bucket.arn}/${aws_s3_bucket_object.object.key}"]
-			not_principals {
-				type="AWS"
-				identifiers = [aws_iam_user.user2.arn]
-			}
-			# make sure the terraform principal is exempt to avoid Forbidden errors during terraform plan
-			condition {
-				test = "StringNotLike"
-				variable = "aws:PrincipalArn"
-				values = [local.currentArn]
-			}
-		}
-	}
-	dynamic "statement" {
-		for_each = local.allow_user2 ? [1] : []
-		content {
-			effect = "Allow"
-			actions = ["s3:GetObject"]
-			resources = ["${aws_s3_bucket.bucket.arn}/${aws_s3_bucket_object.object.key}"]
-			principals {
-				type="AWS"
-				identifiers = [aws_iam_user.user2.arn]
-			}
-		}
-	}
+  dynamic "statement" {
+    for_each = local.block_not_user2 ? [1] : []
+    content {
+      effect    = "Deny"
+      actions   = ["s3:GetObject"]
+      resources = ["${aws_s3_bucket.bucket.arn}/${aws_s3_bucket_object.object.key}"]
+      not_principals {
+        type        = "AWS"
+        identifiers = [aws_iam_user.user2.arn]
+      }
+      # make sure the terraform principal is exempt to avoid Forbidden errors during terraform plan
+      condition {
+        test     = "StringNotLike"
+        variable = "aws:PrincipalArn"
+        values   = [local.currentArn]
+      }
+    }
+  }
+  dynamic "statement" {
+    for_each = local.allow_user2 ? [1] : []
+    content {
+      effect    = "Allow"
+      actions   = ["s3:GetObject"]
+      resources = ["${aws_s3_bucket.bucket.arn}/${aws_s3_bucket_object.object.key}"]
+      principals {
+        type        = "AWS"
+        identifiers = [aws_iam_user.user2.arn]
+      }
+    }
+  }
 }
 
 resource "aws_s3_bucket_policy" "bucket_policy" {
-	count = data.aws_iam_policy_document.bucket_policy_document.statement != null ? 1 : 0
+  count  = data.aws_iam_policy_document.bucket_policy_document.statement != null ? 1 : 0
   bucket = aws_s3_bucket.bucket.bucket
 
   policy = data.aws_iam_policy_document.bucket_policy_document.json
@@ -91,9 +91,9 @@ resource "random_id" "id" {
 
 resource "aws_iam_user" "user1" {
   name = "user1-${random_id.id.hex}"
-	tags = {
-		access = "restricted"
-	}
+  tags = {
+    access = "restricted"
+  }
 }
 
 resource "aws_iam_access_key" "user1_ak" {
@@ -206,19 +206,19 @@ output "user2_secret_access_key" {
 }
 
 output "bucket" {
-	value = aws_s3_bucket.bucket.bucket
+  value = aws_s3_bucket.bucket.bucket
 }
 
 output "key" {
-	value = aws_s3_bucket_object.object.key
+  value = aws_s3_bucket_object.object.key
 }
 
 output "tagged_key" {
-	value = aws_s3_bucket_object.tagged_object.key
+  value = aws_s3_bucket_object.tagged_object.key
 }
 
 output "tagged_key2" {
-	value = aws_s3_bucket_object.tagged_object2.key
+  value = aws_s3_bucket_object.tagged_object2.key
 }
 
 data "aws_iam_policy_document" "assume-role-policy" {
@@ -237,5 +237,5 @@ resource "aws_iam_role" "role" {
 }
 
 output "role" {
-	value = aws_iam_role.role.arn
+  value = aws_iam_role.role.arn
 }
