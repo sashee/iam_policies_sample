@@ -159,7 +159,7 @@ AWS_ACCESS_KEY_ID=$(terraform output user2_access_key_id) AWS_SECRET_ACCESS_KEY=
 An error occurred (AccessDenied) when calling the GetObject operation: Access Denied
 ```
 
-## Scenario #4: Using a group to allow access to object tagged with the same access as the principal
+## Scenario #5: Using a group to allow access to object tagged with the same access as the principal
 
 User1 is a member of a group. The group's policy allows accessing objects that are tagged the same as the principal:
 
@@ -199,9 +199,11 @@ AWS_ACCESS_KEY_ID=$(terraform output user1_access_key_id) AWS_SECRET_ACCESS_KEY=
 An error occurred (AccessDenied) when calling the GetObject operation: Access Denied
 ```
 
-## Scenario #5: An IAM role must allow the AssumeRole action as well as the identity policy
+## Scenario #6: An IAM role delegates access to identity policies
 
-User1 has access to an IAM role, but the role also must allow access from the account.
+By default, having AssumeRole access to a role is not enough. The role has to either trust the identity, in which case there is no identity-based policy is required (just like for S3 objects) or trust *the account* in which case it delegates access to identity policies.
+
+User1 has access to the role via an identity-based policy:
 
 ```
 {
@@ -218,6 +220,8 @@ User1 has access to an IAM role, but the role also must allow access from the ac
 }
 ```
 
+And the role trusts the account (```:root```) so that identity-based policies ase effective:
+
 ```
 {
   "Version": "2012-10-17",
@@ -233,8 +237,6 @@ User1 has access to an IAM role, but the role also must allow access from the ac
   ]
 }
 ```
-
-The ```arn:aws:iam::<accountid>:root``` allows the whole account, so from here the identity policies define access.
 
 ```
 AWS_ACCESS_KEY_ID=$(terraform output user1_access_key_id) AWS_SECRET_ACCESS_KEY=$(terraform output user1_secret_access_key) AWS_SESSION_TOKEN="" aws sts assume-role --role-arn $(terraform output role) --role-session-name ab
