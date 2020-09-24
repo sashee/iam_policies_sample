@@ -1,9 +1,14 @@
 provider "aws" {
 }
 
-locals {
-  block_not_user2 = false
-  allow_user2     = false
+variable "block_not_user2" {
+  type    = bool
+  default = false
+}
+
+variable "allow_user2" {
+  type    = bool
+  default = false
 }
 
 data "aws_caller_identity" "current" {}
@@ -47,7 +52,7 @@ locals {
 
 data "aws_iam_policy_document" "bucket_policy_document" {
   dynamic "statement" {
-    for_each = local.block_not_user2 ? [1] : []
+    for_each = var.block_not_user2 ? [1] : []
     content {
       effect    = "Deny"
       actions   = ["s3:GetObject"]
@@ -65,7 +70,7 @@ data "aws_iam_policy_document" "bucket_policy_document" {
     }
   }
   dynamic "statement" {
-    for_each = local.allow_user2 ? [1] : []
+    for_each = var.allow_user2 ? [1] : []
     content {
       effect    = "Allow"
       actions   = ["s3:GetObject"]
